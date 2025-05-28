@@ -90,7 +90,7 @@ async def get_activities() -> Dict[str, Any]:
     """Return all activities with sanitized data."""
     sanitized_activities = {}
     for name, details in activities.items():
-        sanitized_activities[sanitize_html(name)] = {
+        sanitized_activities[name] = {
             "description": sanitize_html(details["description"]),
             "schedule": sanitize_html(details["schedule"]),
             "max_participants": details["max_participants"],
