@@ -10,7 +10,7 @@ def sanitize_html(text):
 def sanitize_email(email):
     """Sanitize and validate email address."""
     if not isinstance(email, str):
-        return ""
+        raise ValueError("Email must be a string")
     # Basic email validation and sanitization
     email = email.strip().lower()
     if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
