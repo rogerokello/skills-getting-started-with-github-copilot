@@ -4,6 +4,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const signupForm = document.getElementById("signup-form");
   const messageDiv = document.getElementById("message");
 
+  // Helper function to sanitize strings for HTML insertion
+  function sanitizeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
   // Function to fetch activities from API
   async function fetchActivities() {
     try {
@@ -20,31 +27,31 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const spotsLeft = details.max_participants - details.participants.length;
 
-        // Create participants list HTML
+        // Create participants list HTML with sanitized emails
         const participantsList = details.participants.length > 0
           ? `
             <div class="participants-section">
               <h5>Current Participants:</h5>
               <ul>
-                ${details.participants.map(email => `<li>${email}</li>`).join('')}
+                ${details.participants.map(email => `<li>${sanitizeHtml(email)}</li>`).join('')}
               </ul>
             </div>`
           : '<p><em>No participants yet</em></p>';
 
         activityCard.innerHTML = `
-          <h4>${name}</h4>
-          <p>${details.description}</p>
-          <p><strong>Schedule:</strong> ${details.schedule}</p>
+          <h4>${sanitizeHtml(name)}</h4>
+          <p>${sanitizeHtml(details.description)}</p>
+          <p><strong>Schedule:</strong> ${sanitizeHtml(details.schedule)}</p>
           <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
           ${participantsList}
         `;
 
         activitiesList.appendChild(activityCard);
 
-        // Add option to select dropdown
+        // Add sanitized option to select dropdown
         const option = document.createElement("option");
         option.value = name;
-        option.textContent = name;
+        option.textContent = sanitizeHtml(name);
         activitySelect.appendChild(option);
       });
     } catch (error) {

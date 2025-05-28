@@ -10,6 +10,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
 import os
 from pathlib import Path
+from typing import Dict, Any
+from .utils import sanitize_html, sanitize_email
 
 app = FastAPI(title="Mergington High School API",
               description="API for viewing and signing up for extracurricular activities")
@@ -84,24 +86,39 @@ def root():
 
 
 @app.get("/activities")
-def get_activities():
-    return activities
+async def get_activities() -> Dict[str, Any]:
+    """Return all activities with sanitized data."""
+    sanitized_activities = {}
+    for name, details in activities.items():
+        sanitized_activities[sanitize_html(name)] = {
+            "description": sanitize_html(details["description"]),
+            "schedule": sanitize_html(details["schedule"]),
+            "max_participants": details["max_participants"],
+            "participants": [sanitize_html(email) for email in details["participants"]]
+        }
+    return sanitized_activities
 
 
-@app.post("/activities/{activity_name}/signup")
-def signup_for_activity(activity_name: str, email: str):
-    """Sign up a student for an activity"""
-    # Validate activity exists
-    if activity_name not in activities:
-        raise HTTPException(status_code=404, detail="Activity not found")
+@app.post("/activities/{activity}/signup")
+async def signup_activity(activity: str, email: str):
+    """Sign up for an activity with sanitized inputs."""
+    try:
+        email = sanitize_email(email)
+        activity_name = sanitize_html(activity)
 
-    # Get the specificy activity
-    activity = activities[activity_name]
+        if activity_name not in activities:
+            raise HTTPException(status_code=404, detail="Activity not found")
 
-    # Validate student is not already signed up
-    if email in activity["participants"]:
-        raise HTTPException(status_code=400, detail="Student already signed up")
+        activity_details = activities[activity_name]
 
-    # Add student
-    activity["participants"].append(email)
-    return {"message": f"Signed up {email} for {activity_name}"}
+        if email in activity_details["participants"]:
+            raise HTTPException(status_code=400, detail="Already signed up")
+
+        if len(activity_details["participants"]) >= activity_details["max_participants"]:
+            raise HTTPException(status_code=400, detail="Activity is full")
+
+        activity_details["participants"].append(email)
+        return {"message": "Successfully signed up for activity"}
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
